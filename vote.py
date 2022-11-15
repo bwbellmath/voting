@@ -114,7 +114,7 @@ for year in control["year"].unique():
   plt.title(F"Histogram of Stochastic voting outcomes for House Election in {year}")
   plt.xlabel("Number of House Seats Awarded to each Party")
   plt.ylabel("Count of Scenarios for Each Balance of Power")
-  fo = F"img/hist-{year}.png"
+  fo = F"img/1976-2020-house-hist-{year}.png"
   fig.set_size_inches(10,6)
   fig.savefig(fo)
 
