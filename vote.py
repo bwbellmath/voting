@@ -115,7 +115,7 @@ for year in control["year"].unique():
   plt.xlabel("Number of House Seats Awarded to each Party")
   plt.ylabel("Count of Scenarios for Each Balance of Power")
   fo = F"img/1976-2020-house-hist-{year}.png"
-  fig.set_size_inches(10,6)
+  fig.set_size_inches(14, 7)
   fig.savefig(fo)
 
 # group other parties in control all together
