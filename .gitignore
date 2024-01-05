@@ -128,4 +128,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 csv/1976-2020-house-stoch_test.csv
-csv/1976-2020-house-stoch_test.csv
+csv/1976-2020-senate-stoch_test.csv

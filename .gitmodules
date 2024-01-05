@@ -1,0 +1,6 @@
+[submodule "utils"]
+	path = utils
+	url = git@github.com:bwbellmath/utils.git
+[submodule "election-results"]
+	path = election-results
+	url = git@github.com:fivethirtyeight/election-results.git
