@@ -98,7 +98,7 @@ for year in control["year"].unique():
   bins = np.histogram(np.hstack((da, ra, oa)), bins=60)[1]
   dh = plt.hist(da, bins, color="blue", alpha=0.3, label="Democrat")
   rh = plt.hist(ra, bins, color="red", alpha=0.3, label="Republican")  
-  oh = plt.hist(oa, bins, color="green", alpha=0.3, Label = "Other")
+  oh = plt.hist(oa, bins, color="green", alpha=0.3, label = "Other")
   ymax = np.array([dh[0], rh[0], oh[0]]).max()
   dc = np.array(control_y.loc[control_y["party_major"] == "DEMOCRAT", "count_win"])[0]
   rc = np.array(control_y.loc[control_y["party_major"] == "REPUBLICAN", "count_win"])[0]
@@ -136,7 +136,7 @@ hdg = house_dice.groupby(["state_district"])["dice_win-0"].sum().reset_index()
 # # notes on voting strategy
 # #	gerymandering and districting due to lack of representation becomes irelevant
 # # 	vote for your longshot candidate because it actually increases their chance of getting elected
-# #       veto voting -- allow people to cast their vote negatively, ONLY decrease the chances of one candidate
-# # makes it much harder for career politicians
-
+# #     veto voting -- allow people to cast their vote negatively, ONLY decrease the chances of one candidate
+# # 	makes it much harder for career politicians
+# #     can a sample of 200 outcomes be averaged to pick by state? like, can we force it to pick an outcome near the mean in order to reduce randomness? (We don't need to, but I think it would be better...
 # #       
