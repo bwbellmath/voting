@@ -4,92 +4,114 @@ import torch
 import matplotlib.pyplot as plt
 
 HUGE = 10000000000
+
+# TODO measure political spectrum: correspondence of other parties with strength of democratic or republican majority. More democratic majority? we're saying the associated parties are likely to be more left, or at least something...let's just look at that correlation, so that's one dimension we see if it separates anything.
+# TODO second metric based on text or explicit ideology
+# just make random political spectra and then adjust until people's first choice preferences match the house results.
+# the ranked choice voting...:
+# do this in a piece by piece aggregation
+# each vote needs to be self-contained and have a single result communcated forward
+
+# left house_er, right house
+
 fi = "csv/1976-2020-house.csv"
-house = pd.read_csv(fi)# stringsAsFactors=False)
-house = house.loc[house["state_po"] != "DC"]
-house["count"] = 1
-# everyone who is running unopposed needs to get at least one vote
-unopposed = house.groupby(["year", "state", "district"])["count", "candidatevotes"].sum().reset_index()
-unopposed["unopposed"] = 0
-unopposed.loc[(unopposed["count"] == 1) & (unopposed["candidatevotes"] < 1), "unopposed"] = 1
-#unopposed["unopposed"] = 1
-unopposed = unopposed[["year", "state", "district", "unopposed"]]
+house = extract_elections(fi)
+fi = "election-results/election_results_house.csv"
+house_fte = extract_elections(fi)
+#house = pd.read_csv(fi)# stringsAsFactors=False)
 
-house = house.merge(unopposed, on=["year", "state", "district"], how="outer")
-house.loc[house["unopposed"] > 0, "candidatevotes"] = 1
-house = house.loc[house["candidatevotes"] != 0]
-house = house.fillna("Blank")
+# filter to just the new ones more recent than the old ones and combine
+house_fte = house_fte[house_fte["year"] > house["year"].max()]
+house_combined = pd.concat([house, house_fte])
 
-# add state district field
-house["state_district"] = house.agg('{0[state]}-{0[district]}'.format, axis=1)
+# cleanup function
+house_combined = house_cleanup(house_combined)
 
-house["count_win"] = 0
-# simulate instant runoff?
+# take subset
+# perform election (format) : single, dice, approval, rcv, etc...
+# election results: Just add each win to "wins" column : tot_count, win_count
+# format : needs
+# check for .csv of election (format, subset, iter), read and if not, run the election
+# single : winner (1, 0)
+# dice : Roll*total_votes (in [0,total_votes]), winner (1,0)
+# approval : approval count (in [0,total_votes]), winner (1, 0)
+# quota : winner (1,0)
+# rcv : choice count (1,2,3,...), average rank, winner | entire dataset of each voter and their ranks...(this is STUPID) 
+# second df just stores sum of counts over many runs, so gives back a vector of winners for each iteration
 
-house["cumsum"] = house.groupby(["year", "state_district"])["candidatevotes"].cumsum()
-idx = house.groupby(["year", "state_district"], sort=False)["candidatevotes"].transform(max) == house["candidatevotes"]
-house.loc[idx, "count_win"] = 1
-
+# return frame with results of election. 
 # part to rerun
 n_iter = 200
 fnames = []
 for i in range(n_iter):
+  house_combined["cumsum"] = house_combined.groupby(["year", "state_district"])["candidatevotes"].cumsum()
+
   fname = F"dice_win-{i}"
   fnames.append(fname)
-  house[fname] = 0
+  house_combined[fname] = 0
   print(F"running iteration {i+1}/{n_iter}")
-  tv = house.groupby(["year", "state_district"])["totalvotes"].max().reset_index()
+  tv = house_combined.groupby(["year", "state_district"])["totalvotes"].max().reset_index()
   tv[F"rand-{i}"] = np.random.rand(len(tv))
   tv[F"die-{i}"] = tv["totalvotes"]*tv[F"rand-{i}"]
   tv = tv.rename({'totalvotes': F'tv-{i}'}, axis=1)
 
-  house = house.merge(tv, on=["year", "state_district"])
-  house["win_tot"] = house["cumsum"]-house[F"die-{i}"]
-  house.loc[house["win_tot"] < 0, "win_tot"] = HUGE
-  #house["win_pos"] = house["win_tot"] > 0
-  # note this has an issue if a candidate received zero votes, this will find both numbers n and n+0 and mark both as winners. Can't have that, so remove any candidates with 0 votes from house
+  house_iter = house_combined.merge(tv, on=["year", "state_district"])
+  house_iter["win_tot"] = house_iter["cumsum"]-house_iter[F"die-{i}"]
+  house_iter.loc[house_iter["win_tot"] < 0, "win_tot"] = HUGE
+  house_iter["iter"] = i
+  # TODO write this out. 
 
-  wdx = house.groupby(["year", "state_district"], sort=False)["win_tot"].transform(min) == house["win_tot"]
-  house.loc[wdx, fname] = 1
+  house_combined = house_combined.merge(tv, on=["year", "state_district"])
+  house_combined["win_tot"] = house_combined["cumsum"]-house_combined[F"die-{i}"]
+  house_combined.loc[house_combined["win_tot"] < 0, "win_tot"] = HUGE
+  #house_combined["win_pos"] = house_combined["win_tot"] > 0
+  # note this has an issue if a candidate received zero votes, this will find both numbers n and n+0 and mark both as winners. Can't have that, so remove any candidates with 0 votes from house_combined
+
+  # designates winner
+  wdx = house_combined.groupby(["year", "state_district"], sort=False)["win_tot"].transform("min") == house_combined["win_tot"]
+  house_combined.loc[wdx, fname] = 1
   
 
 
 # # part out by year
 # # year = 2020
-# for year in house["year"].unique():
-#   y_house = house.loc[house["year"] == year]
+# for year in house_combined["year"].unique():
+#   y_house_combined = house_combined.loc[house_combined["year"] == year]
 #   # by state and district
 #   test = torch.rand(100000).numpy()
 #   print(F"Running stochastic election for {int(year)}")
 #   # get subset that is unique by state and district
-#   for sd in y_house["state_district"].unique():
-#     y_sd_house = y_house.loc[y_house["state_district"] == sd]
+#   for sd in y_house_combined["state_district"].unique():
+#     y_sd_house_combined = y_house_combined.loc[y_house_combined["state_district"] == sd]
 #     # gotta deal with runoff
 #     # take total, pick random, multiply by total, if within first range, candidate 1, second range ...
-#     total = y_sd_house["candidatevotes"].sum()
-#     test = y_sd_house["candidatevotes"].cumsum()
+#     total = y_sd_house_combined["candidatevotes"].sum()
+#     test = y_sd_house_combined["candidatevotes"].cumsum()
 #     die = np.random.rand()*total
 #     win = ((test-die) > 0).idxmax()
-#     house.loc["dice_win",win] = 1
+#     house_combined.loc["dice_win",win] = 1
 
   
-fo = "csv/1976-2020-house-stoch_test.csv"
-house.to_csv(fo)
+fo = "csv/1976-2020-house_combined-stoch_test.csv"
+house_combined.to_csv(fo)
 
 # aggregate by party and year
 
 dnames = fnames
 fnames.append("count_win")
-house["party_major"] = house["party"]
-house.loc[(house["party"] != "DEMOCRAT") & (house["party"] != "REPUBLICAN"), "party_major"] = "OTHER"
+house_combined["party_major"] = house_combined["party"]
+house_combined.loc[(house_combined["party"] != "DEMOCRAT") & (house_combined["party"] != "REPUBLICAN"), "party_major"] = "OTHER"
 
-control = house.groupby(list(["year", "party_major"]))[fnames].sum().reset_index()
+control = house_combined.groupby(list(["year", "party_major"]))[fnames].sum().reset_index()
 #control = control.loc[(control["dice_win"] > 0) | (control["count_win"] > 0)]
 
 control_c = control.groupby(["year"])[fnames].sum().reset_index()
-fo = "csv/1976-2020-house-stoch_test-control.csv"
+fo = "csv/1976-2020-house_combined-stoch_test-control.csv"
 control.to_csv(fo)
+# how to keep each histogram??!? don't want columns, do rows instead, sort, for intersection, compute histogram and plot. 
+# TODO modify like senate so carries forward previoius winner unless this race changes. 
 for year in control["year"].unique():
+  # TODO make subplot showing popular vote by party like my stuff for euclid
   fig = plt.figure()
   control_y = control.loc[control["year"] == year]
   da = np.array(control_y.loc[control_y["party_major"] == "DEMOCRAT", dnames])[0]
@@ -98,7 +120,7 @@ for year in control["year"].unique():
   bins = np.histogram(np.hstack((da, ra, oa)), bins=60)[1]
   dh = plt.hist(da, bins, color="blue", alpha=0.3, label="Democrat")
   rh = plt.hist(ra, bins, color="red", alpha=0.3, label="Republican")  
-  oh = plt.hist(oa, bins, color="green", alpha=0.3, Label = "Other")
+  oh = plt.hist(oa, bins, color="green", alpha=0.3, label = "Other")
   ymax = np.array([dh[0], rh[0], oh[0]]).max()
   dc = np.array(control_y.loc[control_y["party_major"] == "DEMOCRAT", "count_win"])[0]
   rc = np.array(control_y.loc[control_y["party_major"] == "REPUBLICAN", "count_win"])[0]
@@ -121,12 +143,12 @@ for year in control["year"].unique():
 # group other parties in control all together
 
 # check unique state-districts in 2016 versus 2018
-d20 = house.loc[house["year"] == 2020, "state_district"].unique()
-d18 = house.loc[house["year"] == 2018, "state_district"].unique()
-d16 = house.loc[house["year"] == 2016, "state_district"].unique()
-house_1976 = house.loc[(house["year"] == 2018) & (house["state_district"] == "NEW YORK-2")]
-house_dice = house_1976.loc[house_1976["dice_win-0"] > 0]
-hdg = house_dice.groupby(["state_district"])["dice_win-0"].sum().reset_index()
+d20 = house_combined.loc[house_combined["year"] == 2020, "state_district"].unique()
+d18 = house_combined.loc[house_combined["year"] == 2018, "state_district"].unique()
+d16 = house_combined.loc[house_combined["year"] == 2016, "state_district"].unique()
+house_combined_1976 = house_combined.loc[(house_combined["year"] == 2018) & (house_combined["state_district"] == "NEW YORK-2")]
+house_combined_dice = house_combined_1976.loc[house_combined_1976["dice_win-0"] > 0]
+hdg = house_combined_dice.groupby(["state_district"])["dice_win-0"].sum().reset_index()
 # # questions: who wins more nailbiters?
 # # how badly gerrymandered are different states?
 # # how does state popular vote fraction relate with number of representatives apportioned by this system
