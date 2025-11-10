@@ -41,7 +41,7 @@ tv[fnames.astype(str)]
 
 for i in range(n_iter):
   fname = F"dice_win-{i}"
-  fnames.append(fname)
+  #fnames.append(fname)
   house[fname] = 0
   print(F"running iteration {i+1}/{n_iter}")
   tv = house.groupby(["year", "state_district"])["totalvotes"].max().reset_index()
@@ -52,4 +52,3 @@ for i in range(n_iter):
   house = house.merge(tv, on=["year", "state_district"])
   house["win_tot"] = house["cumsum"]-house[F"die-{i}"]
   house.loc[house["win_tot"] < 0, "win_tot"] = HUGE
-

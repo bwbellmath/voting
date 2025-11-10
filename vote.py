@@ -42,34 +42,8 @@ house_combined = house_cleanup(house_combined)
 # return frame with results of election. 
 # part to rerun
 n_iter = 200
-fnames = []
+
 for i in range(n_iter):
-  house_combined["cumsum"] = house_combined.groupby(["year", "state_district"])["candidatevotes"].cumsum()
-
-  fname = F"dice_win-{i}"
-  fnames.append(fname)
-  house_combined[fname] = 0
-  print(F"running iteration {i+1}/{n_iter}")
-  tv = house_combined.groupby(["year", "state_district"])["totalvotes"].max().reset_index()
-  tv[F"rand-{i}"] = np.random.rand(len(tv))
-  tv[F"die-{i}"] = tv["totalvotes"]*tv[F"rand-{i}"]
-  tv = tv.rename({'totalvotes': F'tv-{i}'}, axis=1)
-
-  house_iter = house_combined.merge(tv, on=["year", "state_district"])
-  house_iter["win_tot"] = house_iter["cumsum"]-house_iter[F"die-{i}"]
-  house_iter.loc[house_iter["win_tot"] < 0, "win_tot"] = HUGE
-  house_iter["iter"] = i
-  # TODO write this out. 
-
-  house_combined = house_combined.merge(tv, on=["year", "state_district"])
-  house_combined["win_tot"] = house_combined["cumsum"]-house_combined[F"die-{i}"]
-  house_combined.loc[house_combined["win_tot"] < 0, "win_tot"] = HUGE
-  #house_combined["win_pos"] = house_combined["win_tot"] > 0
-  # note this has an issue if a candidate received zero votes, this will find both numbers n and n+0 and mark both as winners. Can't have that, so remove any candidates with 0 votes from house_combined
-
-  # designates winner
-  wdx = house_combined.groupby(["year", "state_district"], sort=False)["win_tot"].transform("min") == house_combined["win_tot"]
-  house_combined.loc[wdx, fname] = 1
   
 
 

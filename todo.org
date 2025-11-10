@@ -1,0 +1,66 @@
+Ok, I have a task to get started on. I want to re-organize this repo into a
+  modern format with modules and a couple of scripts (one for senate, one for
+  house, one for president just doing the dice-roll based voting I was doing
+  before) and then I want a new set of modules and a test-script to start
+  developing the following new hidden political compass embedding learning
+
+* This project is about implicit neural representations for hidden political compasses. 
+does this actually require implicit neural representation? That would
+imply that the political compass can't be projected in a linear
+(embedding) space and that the "requested view" can encode what you
+see in an election (The circumsatnces? is that in input that can be
+characterized. 
+** Our goal is to find a well posed mini-problem that we can work on. 
+** One state, one demographic, ideally with multiple observables (surveys, elections, etc...) plus some text information on the candidates which we can interpret. 
+*** pipeline: 
+1. Surveys
+2. Election Results
+3. Text information about candidates and platforms -> embeddings which
+   share spatial frame of reference with the hidden political
+   compass. 
+4. Voters are embedded, political candidates (dual) are
+   embedded + dimensions like major party endorsement, money,
+   air-time, any other metrics which can be extracted from text data. Voters will vote for the nearest candidate to their
+   position in a learned metric.
+5. Each voting system (ranked choice, approval, single-preference,
+   relative placement, anything else?) will generate a set of
+   strategies (weightings of the various axes of the embedding of the
+   politicians) and will execute those strategies according to the
+   voting games. 
+6. Preference distance is a metric that can be measured now! 
+
+Is this an embedding problem (learning hidden distributions?) 
+or an implicit neural representation -- view should be the view of the
+voter -- their particular preception -- but that leaves little data to
+train on INRs require few very rich ground truth examples -- we don't
+have that, we only have the aggregate -- better for an embedding
+problem... We have the political compass in which candidates are
+embedded, we have a view -- that the voters have of the compass -- a
+compass of their own onto which we compute a projection -- essentially
+measuring distance. The data we have are: 1. surveys. 2. polls
+(votes) for related objectives referendums, lower-ticket candidates,
+etc..., 3. text data: news, publications, candidate platforms,
+webpages, etc.... (hardest) 
+
+Embed in order to compute distance (arccos?) There needs to be
+something to reconcile the views of the voters with the embeddings of
+the politicians -- something semi-random (learned covariance?) feels
+like that's right -- a distribution of distortions of the politicians 
+
+So we have model(x \sim N(0,1)) \circ media_model(media) -> voter
+embedding
+media_model(media) -> politician embeddings (some basic axes and some
+hidden ones) 
+<voter embedding + N(0, cov_trainable), politician embeddings>  = p
+voting_strategy(p) = votes (for surveys and polls)
+go backward with significant regularization on each. 
+
+First goal: generate random embeddings with a generic "support"
+embedding to indicate the two strongest party's level of support. Then 
+** Goal 1 : Get old code running for national - make sure it's the cheap non-dumping version
+** Goal 2 : State-Level Gerrymandering Per Year -- this will be what ryn uses for the map.
+** Goal 3 : Set up Inference Problem Data IO
+** Goal 4 : Select Model for data inference problem (Transformer VAE sounds ideal?)
+*
+
+** Later Goal : Convert model to use latent embeddings from a transformer or something similar so that the problem can be converted for the DefCon Game. 

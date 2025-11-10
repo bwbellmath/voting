@@ -13,6 +13,111 @@ fo_tex = "voting.tex"
 
 report = Report(fo_md, fo_tex)
 
+def import_election_data(filepath):
+    """
+    Import election data from either old or new CSV format and standardize it.
+    
+    Parameters:
+    filepath (str): Path to the CSV file
+    
+    Returns:
+    pd.DataFrame: Standardized election data DataFrame
+    """
+    # Read CSV file
+    df = pd.read_csv(filepath)
+    
+    # Determine format based on columns
+    is_new_format = 'race_id' in df.columns
+    
+    if is_new_format:
+        # Handle new format
+        df = df.rename(columns={
+            'state_abbrev': 'state_po',
+            'candidate_name': 'candidate',
+            'ballot_party': 'party',
+            'votes': 'candidatevotes',
+            'cycle': 'year'
+        })
+        
+        # Extract district number from office_seat_name
+        df['district'] = df['office_seat_name'].str.extract(r'District (\d+)').fillna('0')
+        df['district'] = df['district'].str.zfill(3)  # Pad with leading zeros
+        
+        # Set default values for required columns
+        df['writein'] = df['party'].str.upper() == 'W'
+        df['mode'] = 'TOTAL'
+        df['stage'] = df['stage'].str.upper()
+        df['special'] = df['special'].astype(str).str.upper()
+        df['runoff'] = 'FALSE'
+        
+    # Standardize columns in both formats
+    df['party'] = df['party'].fillna('')
+    df['party'] = df['party'].str.upper()
+    df['candidate'] = df['candidate'].str.upper()
+    df['state'] = df['state'].str.upper()
+    
+    # Ensure all required columns exist with correct types
+    required_columns = [
+        'year', 'state', 'state_po', 'district', 'stage',
+        'runoff', 'special', 'candidate', 'party', 'writein',
+        'mode', 'candidatevotes', 'totalvotes'
+    ]
+    
+    # Calculate totalvotes if missing
+    if 'totalvotes' not in df.columns:
+        df['totalvotes'] = df.groupby(['year', 'state', 'district'])['candidatevotes'].transform('sum')
+    
+    # Select and order required columns
+    df = df[required_columns]
+    
+    # Filter for general elections only
+    df = df[df['stage'] == 'GEN']
+    
+    # Convert vote columns to numeric
+    df['candidatevotes'] = pd.to_numeric(df['candidatevotes'], errors='coerce')
+    df['totalvotes'] = pd.to_numeric(df['totalvotes'], errors='coerce')
+    
+    return df
+
+def validate_election_data(df):
+    """
+    Validate the imported election data meets requirements.
+    
+    Parameters:
+    df (pd.DataFrame): Election data DataFrame
+    
+    Returns:
+    tuple: (bool, str) indicating if validation passed and any error message
+    """
+    try:
+        # Check for missing required columns
+        required_columns = [
+            'year', 'state', 'state_po', 'district', 'stage',
+            'runoff', 'special', 'candidate', 'party', 'writein',
+            'mode', 'candidatevotes', 'totalvotes'
+        ]
+        missing_cols = [col for col in required_columns if col not in df.columns]
+        if missing_cols:
+            return False, f"Missing required columns: {missing_cols}"
+        
+        # Check for non-numeric vote counts
+        if not pd.to_numeric(df['candidatevotes'], errors='coerce').notnull().all():
+            return False, "Invalid non-numeric values in candidatevotes"
+        
+        # Check for negative votes
+        if (df['candidatevotes'] < 0).any():
+            return False, "Negative values found in candidatevotes"
+        
+        # Check for totalvotes consistency
+        grouped = df.groupby(['year', 'state', 'district'])
+        if not (grouped['candidatevotes'].sum() == grouped['totalvotes'].first()).all():
+            return False, "Total votes inconsistency detected"
+        
+        return True, "Validation passed"
+        
+    except Exception as e:
+        return False, f"Validation error: {str(e)}"
+
 # TODO measure political spectrum: correspondence of other parties with strength of democratic or republican majority. More democratic majority? we're saying the associated parties are likely to be more left, or at least something...let's just look at that correlation, so that's one dimension we see if it separates anything.
 # TODO second metric based on text or explicit ideology
 # just make random political spectra and then adjust until people's first choice preferences match the house results.
@@ -21,42 +126,84 @@ report = Report(fo_md, fo_tex)
 # each vote needs to be self-contained and have a single result communcated forward
 # TODO pull and merge in the fivethirtyeight data
 # TODO Use Report to put the writeup in README.md"
+
+# Import new datasets
+fi_house  = "election-results/election_results_house.csv"
+fi_pres   = "election-results/election_results_presidential.csv"
+fi_senate = "election-results/election_results_senate.csv"
+
+df_house_new  = import_election_data(fi_house)
+df_senate_new = import_election_data(fi_senate)
+df_pres_new   = import_election_data(fi_pres)
+
+# Import old datasets
+fi_house  = "csv/1976-2020-house.csv"
+fi_senate = "csv/1976-2020-senate.csv"
+fi_pres   = "csv/1976-2020-president.csv"
+
+df_house_old  = import_election_data(fi_house)
+df_senate_old = import_election_data(fi_senate)
+df_pres_old   = import_election_data(fi_pres)
+
+# Merge datasets
+df_house_merged  = merge_election_data(df_house_old, df_house_new)
+df_senate_merged = merge_election_data(df_senate_old, df_senate_new)
+df_pres_merged   = merge_election_data(df_pres_old, df_pres_new)
+
+# Validate the merged data
+is_valid, message = validate_election_data(df_merged)
+if not is_valid:
+    print(f"Merged data validation failed: {message}")
+else:
+    print(f"Successfully merged data with {len(df_merged)} total rows")
+
+
+
 ft_house  = pd.read_csv("election-results/election_results_house.csv")
 ft_pres   = pd.read_csv("election-results/election_results_presidential.csv")
 ft_senate = pd.read_csv("election-results/election_results_senate.csv")
+
+
 
 # House
 fi = "csv/1976-2020-house.csv"
 house = pd.read_csv(fi)# stringsAsFactors=False)
 house = house.loc[house["state_po"] != "DC"]
 # change ft_house names to match house names
-ft_house.columns = id                           30920  year                      1976  
-                   race_id                       9224  state                  ALABAMA
-                   state_abbrev                    MO->state_po                    AL
-                   state                     Missouri  state_fips                   1
-                   office_id                      296  state_cen                   63
-                   office_name             U.S. House  state_ic                    41
-                   office_seat_name        District 4  office                US HOUSE
-                   cycle                         2022  district                     1
-                   stage                      general  stage                      GEN
-                   special                      False  runoff                   False
-                   party                          NaN  special                  False
-                   politician_id                18975  candidate         JACK EDWARDS
-                   candidate_id                 30914  party               REPUBLICAN
-                   candidate_name      David A. Haave  writein                  False
-                   ballot_party                     W  mode                     TOTAL
-                   votes                            1  candidatevotes           98257
-                   percent                0.000392035  totalvotes              157170
-                   unopposed                    False  unofficial               False
-                   winner                       False  version               20220331
-                   alt_result_text                NaN  fusion_ticket            False
-                   source          
+# ft_house.columns = id                           30920  year                      1976  
+#                    race_id                       9224  state                  ALABAMA
+#                    state_abbrev                    MO->state_po                    AL
+#                    state                     Missouri  state_fips                   1
+#                    office_id                      296  state_cen                   63
+#                    office_name             U.S. House  state_ic                    41
+#                    office_seat_name        District 4  office                US HOUSE
+#                    cycle                         2022  district                     1
+#                    stage                      general  stage                      GEN
+#                    special                      False  runoff                   False
+#                    party                          NaN  special                  False
+#                    politician_id                18975  candidate         JACK EDWARDS
+#                    candidate_id                 30914  party               REPUBLICAN
+#                    candidate_name      David A. Haave  writein                  False
+#                    ballot_party                     W  mode                     TOTAL
+#                    votes                            1  candidatevotes           98257
+#                    percent                0.000392035  totalvotes              157170
+#                    unopposed                    False  unofficial               False
+#                    winner                       False  version               20220331
+#                    alt_result_text                NaN  fusion_ticket            False
+#                    source          
 
 # join ft_house_named into this
 # do all the stuff we used to do
 house["count"] = 1
 # everyone who is running unopposed needs to get at least one vote
-unopposed = house.groupby(["year", "state", "district"])["count", "candidatevotes"].sum().reset_index()
+
+unopposed = (
+    house
+    .groupby(["year", "state", "district"])[["count", "candidatevotes"]]
+    .sum()
+    .reset_index()
+)
+
 unopposed["unopposed"] = 0
 unopposed.loc[(unopposed["count"] == 1) & (unopposed["candidatevotes"] < 1), "unopposed"] = 1
 #unopposed["unopposed"] = 1
@@ -96,7 +243,12 @@ for i in range(n_iter):
   #house["win_pos"] = house["win_tot"] > 0
   # note this has an issue if a candidate received zero votes, this will find both numbers n and n+0 and mark both as winners. Can't have that, so remove any candidates with 0 votes from house
 
-  wdx = house.groupby(["year", "state_district"], sort=False)["win_tot"].transform(min) == house["win_tot"]
+  wdx = (
+       house
+       .groupby(["year", "state_district"], sort=False)["win_tot"]
+       .transform("min")  # <-- use the string "min"
+     ) == house["win_tot"]
+
   house.loc[wdx, fname] = 1
   
 
@@ -136,8 +288,9 @@ control = house.groupby(list(["year", "party_major"]))[fnames].sum().reset_index
 control_c = control.groupby(["year"])[fnames].sum().reset_index()
 fo = "csv/1976-2020-house-stoch_test-control.csv"
 control.to_csv(fo)
+fig = plt.figure()
 for year in control["year"].unique():
-  fig = plt.figure()
+
   control_y = control.loc[control["year"] == year]
   da = np.array(control_y.loc[control_y["party_major"] == "DEMOCRAT", dnames])[0]
   ra = np.array(control_y.loc[control_y["party_major"] == "REPUBLICAN", dnames])[0]
@@ -145,8 +298,9 @@ for year in control["year"].unique():
   bins = np.histogram(np.hstack((da, ra, oa)), bins=60)[1]
   dh = plt.hist(da, bins, color="blue", alpha=0.3, label="Democrat")
   rh = plt.hist(ra, bins, color="red", alpha=0.3, label="Republican")  
-  oh = plt.hist(oa, bins, color="green", alpha=0.3, Label = "Other")
+  oh = plt.hist(oa, bins, color="green", alpha=0.3, label = "Other")
   ymax = np.array([dh[0], rh[0], oh[0]]).max()
+
   dc = np.array(control_y.loc[control_y["party_major"] == "DEMOCRAT", "count_win"])[0]
   rc = np.array(control_y.loc[control_y["party_major"] == "REPUBLICAN", "count_win"])[0]
   oc = np.array(control_y.loc[control_y["party_major"] == "OTHER", "count_win"])[0]
@@ -163,8 +317,10 @@ for year in control["year"].unique():
   plt.ylabel("Count of Scenarios for Each Balance of Power")
   fo = F"img/1976-2020-house-hist-{year}.png"
   fig.set_size_inches(14, 7)
+  print(F"Saving to {fo}")
   fig.savefig(fo)
-
+  fig.clf()
+  
 # group other parties in control all together
 
 # check unique state-districts in 2016 versus 2018

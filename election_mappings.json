@@ -1,0 +1,122 @@
+{
+    "senate_mapping": {
+        "old_format": {
+            "year": "year",
+            "class": "class",
+            "state": "state",
+            "state_po": "state_po",
+            "district": "district",
+            "stage": "stage",
+            "special": "special",
+            "candidate": "candidate",
+            "party_detailed": "party",
+            "writein": "writein",
+            "mode": "mode",
+            "candidatevotes": "candidatevotes",
+            "totalvotes": "totalvotes"
+        },
+        "new_format": {
+            "cycle": "year",
+            "office_seat_name": {
+                "type": "extract",
+                "pattern": "Class (\\d+)",
+                "target": "class"
+            },
+            "state": "state",
+            "state_abbrev": "state_po",
+            "district": {
+                "type": "constant",
+                "value": "statewide"
+            },
+            "stage": "stage",
+            "special": "special",
+            "candidate_name": "candidate",
+            "ballot_party": "party",
+            "votes": "candidatevotes",
+            "total_votes": "totalvotes",
+            "writein": {
+                "type": "derived",
+                "source": "ballot_party",
+                "condition": "W"
+            },
+            "mode": {
+                "type": "constant",
+                "value": "TOTAL"
+            }
+        }
+    },
+    "house_mapping": {
+        "old_format": {
+            "year": "year",
+            "state": "state",
+            "state_po": "state_po",
+            "district": "district",
+            "stage": "stage",
+            "runoff": "runoff",
+            "special": "special",
+            "candidate": "candidate",
+            "party_detailed": "party",
+            "writein": "writein",
+            "mode": "mode",
+            "candidatevotes": "candidatevotes",
+            "totalvotes": "totalvotes"
+        },
+        "new_format": {
+            "cycle": "year",
+            "state": "state",
+            "state_abbrev": "state_po",
+            "office_seat_name": {
+                "type": "extract",
+                "pattern": "District (\\d+)",
+                "target": "district"
+            },
+            "stage": "stage",
+            "special": "special",
+            "candidate_name": "candidate",
+            "ballot_party": "party",
+            "votes": "candidatevotes",
+            "writein": {
+                "type": "derived",
+                "source": "ballot_party",
+                "condition": "W"
+            },
+            "mode": {
+                "type": "constant",
+                "value": "TOTAL"
+            },
+            "runoff": {
+                "type": "constant",
+                "value": "FALSE"
+            }
+        }
+    },
+    "president_mapping": {
+        "old_format": {
+            "year": "year",
+            "state": "state",
+            "state_po": "state_po",
+            "candidate": "candidate",
+            "party_detailed": "party",
+            "writein": "writein",
+            "candidatevotes": "candidatevotes",
+            "totalvotes": "totalvotes"
+        },
+        "new_format": {
+            "cycle": "year",
+            "state": "state",
+            "state_abbrev": "state_po",
+            "candidate_name": "candidate",
+            "ballot_party": "party",
+            "votes": "candidatevotes",
+            "writein": {
+                "type": "derived",
+                "source": "ballot_party",
+                "condition": "W"
+            },
+            "mode": {
+                "type": "constant",
+                "value": "TOTAL"
+            }
+        }
+    }
+}
