@@ -18,10 +18,39 @@ This project performs analysis on voting data using Python and various scientifi
    ```
 
 3. **Launch the D3 visualization interface**:
+
+   **On the server (local or remote):**
    ```bash
    python viz_server.py
    ```
-   Open http://localhost:5000 in your browser to explore interactive visualizations of survey and election data.
+   The server will start on http://localhost:5000.
+
+   **Accessing remotely via SSH tunnel:**
+
+   If the server is running on a remote host, you can access it securely using an SSH tunnel:
+
+   a. **Enable TCP forwarding on the remote server** (one-time setup):
+      ```bash
+      # On the remote server, edit /etc/ssh/sshd_config
+      sudo sed -i 's/AllowTcpForwarding no/AllowTcpForwarding yes/' /etc/ssh/sshd_config
+      sudo systemctl restart ssh
+      ```
+
+   b. **Create the SSH tunnel** (from your local machine):
+      ```bash
+      ssh -f -N -L 8000:localhost:5000 <remote-host>
+      ```
+      This forwards local port 8000 to the remote server's port 5000 through the SSH connection.
+
+      Note: We use port 8000 locally because macOS ControlCenter may occupy port 5000.
+
+   c. **Access the visualization**:
+      Open http://localhost:8000 in your browser.
+
+   **How SSH tunneling works:**
+   - All traffic flows through the existing SSH connection (no additional firewall ports needed)
+   - The tunnel securely encapsulates HTTP traffic within the SSH connection
+   - Perfect for accessing services behind firewalls or NAT
 
 4. **Run preprocessing tests**:
    ```bash

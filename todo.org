@@ -64,3 +64,5 @@ embedding to indicate the two strongest party's level of support. Then
 *
 
 ** Later Goal : Convert model to use latent embeddings from a transformer or something similar so that the problem can be converted for the DefCon Game. 
+
+
