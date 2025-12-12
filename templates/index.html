@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Data Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Political Compass Voting Analysis</h1>
+            <p class="subtitle">Interactive exploration of survey and election data</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="dataType">Data Type:</label>
+                <select id="dataType">
+                    <option value="surveys">Survey Data</option>
+                    <option value="presidential">Presidential Elections</option>
+                    <option value="senate">Senate Elections</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="aggregation">Aggregation:</label>
+                <select id="aggregation">
+                    <option value="time">By Time</option>
+                    <option value="state">By State</option>
+                    <option value="party">By Party</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="vizType">Visualization:</label>
+                <select id="vizType">
+                    <option value="line">Line Chart</option>
+                    <option value="area">Area Chart</option>
+                    <option value="bar">Bar Chart</option>
+                    <option value="heatmap">Heatmap</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <button id="updateBtn">Update Visualization</button>
+            </div>
+        </div>
+
+        <div class="visualization-container">
+            <div id="main-viz" class="viz-panel"></div>
+        </div>
+
+        <div class="grid-container">
+            <div id="survey-trends" class="viz-panel">
+                <h3>Survey Trends Over Time</h3>
+                <svg id="survey-chart"></svg>
+            </div>
+
+            <div id="election-results" class="viz-panel">
+                <h3>Election Results by Year</h3>
+                <svg id="election-chart"></svg>
+            </div>
+
+            <div id="vote-share-map" class="viz-panel">
+                <h3>Vote Share Heatmap</h3>
+                <svg id="heatmap-chart"></svg>
+            </div>
+
+            <div id="comparison-panel" class="viz-panel">
+                <h3>Survey vs Election Comparison</h3>
+                <svg id="comparison-chart"></svg>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>Data Summary</h3>
+            <div id="data-summary"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/visualizations.js') }}"></script>
+</body>
+</html>

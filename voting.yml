@@ -1,16 +1,67 @@
 name: voting
 channels:
-  - defaults
+  - pytorch
   - conda-forge
+  - defaults
 dependencies:
+  # Core Python
   - python=3.10
+
+  # Data manipulation and analysis
   - numpy
   - pandas
+  - scipy
+
+  # Visualization
   - matplotlib
   - seaborn
-  - jupyterlab
-  - scikit-learn
+  - plotly
+
+  # Machine Learning - PyTorch ecosystem
   - pytorch
+  - pytorch-lightning
+  - torchvision
+  - torchaudio
+
+  # Machine Learning - General
+  - scikit-learn
+  - statsmodels
+
+  # Development tools
+  - jupyterlab
+  - ipywidgets
+  - notebook
+
+  # Web server for D3 visualizations
+  - flask
+  - flask-cors
+
+  # Data validation and utilities
+  - tqdm
+  - pyyaml
+  - python-dotenv
+
+  # Pip packages
+  - pip
+  - pip:
+    # Normalizing Flows
+    - nflows
+    - normflows
+
+    # Bayesian inference
+    - pyro-ppl
+
+    # Advanced ML utilities
+    - tensorboard
+    - wandb
+
+    # Configuration management
+    - hydra-core
+    - omegaconf
+
+    # Testing
+    - pytest
+    - pytest-cov
 
 
  

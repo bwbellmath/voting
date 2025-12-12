@@ -1,6 +1,32 @@
 ## Voting Analysis Project
 
-This project performs analysis on voting data using Python and various scientific libraries. The analysis can be enhanced by integrating election results data from the [fivethirtyeight/election-results](https://github.com/fivethirtyeight/election-results) repository.
+This project performs analysis on voting data using Python and various scientific libraries, with a focus on learning hidden political compass embeddings from survey and election data. The analysis can be enhanced by integrating election results data from the [fivethirtyeight/election-results](https://github.com/fivethirtyeight/election-results) repository.
+
+## Quick Start
+
+1. **Clone and setup**:
+   ```bash
+   git clone git@github.com:bwbellmath/voting.git
+   cd voting
+   conda env create -f voting.yml
+   conda activate voting
+   ```
+
+2. **Test the data loaders**:
+   ```bash
+   python data_loaders.py
+   ```
+
+3. **Launch the D3 visualization interface**:
+   ```bash
+   python viz_server.py
+   ```
+   Open http://localhost:5000 in your browser to explore interactive visualizations of survey and election data.
+
+4. **Run preprocessing tests**:
+   ```bash
+   python preprocessing.py
+   ```
 
 ### Setting up the Election Results Submodule
 
@@ -52,21 +78,54 @@ To set up the environment for running the project, follow these steps:
     conda env create -f voting.yml
     ```
 
+    This will install all required dependencies including:
+    - PyTorch and PyTorch Lightning for neural network training
+    - Normalizing Flows libraries (nflows, normflows)
+    - Pyro for Bayesian inference
+    - Flask for serving D3 visualizations
+    - Hydra for experiment configuration
+    - All data processing libraries (pandas, numpy, scikit-learn)
+
 2. **Activate the environment**:
 
     ```bash
     conda activate voting
     ```
 
-3. **Install any additional dependencies** using `pip` or `conda` as needed.
+3. **Verify installation** by testing the data loaders:
 
-4. **Launch JupyterLab** (if you want to use it for development and analysis):
+    ```bash
+    python data_loaders.py
+    ```
+
+4. **Launch JupyterLab** (optional, for interactive development):
 
     ```bash
     jupyter lab
     ```
 
-This will set up the necessary environment with all the dependencies required to run the analysis on voting data.
+5. **Start the visualization server** (to explore data with D3):
+
+    ```bash
+    python viz_server.py
+    ```
+
+    Then open your browser to `http://localhost:5000` to interact with the D3 visualizations.
+
+### Updating the Environment
+
+If the `voting.yml` file is updated, you can update your existing environment:
+
+```bash
+conda env update -f voting.yml --prune
+```
+
+Or remove and recreate it:
+
+```bash
+conda env remove -n voting
+conda env create -f voting.yml
+```
 
 ### Dependencies
 
@@ -121,6 +180,255 @@ This project uses several datasets, both internal to the project and from the **
 
 #### Usage:
 These datasets are utilized to model voter behavior, simulate elections, and explore how shifts in party identification over time may influence election outcomes. By analyzing both survey data and actual election results, this project aims to provide a comprehensive understanding of voter dynamics.
+
+## Methodology: Learning Hidden Political Compass Embeddings
+
+### Overview
+
+This project aims to **estimate posterior distributions of political compass values** that reproduce observed survey results and election outcomes under a voting simulation where voters select the candidate nearest to their preference in a learned metric space. The approach addresses the fundamental challenge that voter preferences are latent (unobserved) variables that must be inferred from aggregate data like surveys and election results.
+
+### The Core Problem
+
+Given:
+- Survey data on voter party identification and preferences
+- Historical election results (vote shares, turnout, margins)
+- Potentially text data on candidates and platforms
+
+Infer:
+- Latent political compass embeddings for voters
+- Candidate positions in the same embedding space
+- A learned metric distance function that predicts voting behavior
+- Posterior distributions that capture uncertainty and multi-modality (e.g., political polarization)
+
+### Mathematical Framework
+
+#### Generative Model
+
+1. **Voter Embeddings**: Each voter `i` has a latent political compass position `z_i ∈ ℝ^d` sampled from a learned distribution:
+   ```
+   z_i ~ p_θ(z | demographics_i, state_i)
+   ```
+
+2. **Candidate Embeddings**: Each candidate `j` has a position `c_j ∈ ℝ^d` which can be:
+   - Learned from text embeddings of platforms/statements
+   - Directly optimized to fit observed data
+   - Constrained by party affiliation or other observables
+
+3. **Voting Model**: Voter `i` votes for candidate `j*` where:
+   ```
+   j* = argmin_j d(z_i, c_j)
+   ```
+   where `d(·,·)` is a learned metric (potentially non-Euclidean).
+
+4. **Observation Model**: Aggregate election results `y` are generated from individual votes:
+   ```
+   y ~ Multinomial(votes(z, c, d))
+   ```
+
+#### Inference Objective
+
+Learn parameters `θ` to maximize:
+```
+p(θ | y_surveys, y_elections) ∝ p(y_surveys, y_elections | θ) p(θ)
+```
+
+### Machine Learning Architectures
+
+The project explores several state-of-the-art architectures for handling multi-modal posterior distributions:
+
+#### 1. Normalizing Flows (Recommended for Multi-Modal Distributions)
+
+**Advantages**:
+- Exact likelihood computation (unlike VAEs)
+- Naturally models complex, multi-modal distributions
+- Invertible transformations allow sampling and density estimation
+- Well-suited for capturing political polarization (bimodal/multimodal voter distributions)
+
+**Architecture**:
+```python
+# Conditional normalizing flow
+z_i ~ Flow_θ(demographics_i, state_i)
+
+# Multiple coupling layers with permutations
+Flow = Compose([
+    CouplingLayer(dim=d, context_dim=demographics_dim),
+    RandomPermutation(),
+    CouplingLayer(dim=d, context_dim=demographics_dim),
+    ...
+])
+```
+
+**Implementation Notes**:
+- Use conditional flows to incorporate demographic/geographic features
+- Coupling layers enable modeling complex multivariate distributions
+- Continuous normalizing flows for smooth, expressive densities
+
+#### 2. Transformer-Based Variational Autoencoder (VAE)
+
+**Advantages**:
+- Handles sequential decision-making (ranked choice voting)
+- Attention mechanisms capture dependencies between voter groups
+- Scalable to large datasets
+- Good for incorporating text embeddings of candidate platforms
+
+**Architecture**:
+```python
+class TransformerVAE(nn.Module):
+    def __init__(self, latent_dim, context_dim):
+        self.encoder = TransformerEncoder(...)  # Demographics, surveys → μ, σ
+        self.decoder = TransformerDecoder(...)  # z → predicted votes
+
+    def forward(self, voter_features, election_context):
+        # Encode to latent distribution
+        μ, log_σ = self.encoder(voter_features)
+
+        # Sample using reparameterization trick
+        z = μ + σ * ε, where ε ~ N(0, I)
+
+        # Decode to voting behavior
+        votes = self.decoder(z, election_context)
+
+        return votes, μ, log_σ
+```
+
+**Loss Function**:
+```
+L = -E[log p(votes | z)] + KL(q(z | voter_features) || p(z))
+```
+
+**Key Challenge**: Standard Gaussian priors produce unimodal posteriors. Solutions:
+- Use mixture of Gaussians prior: `p(z) = Σ_k π_k N(μ_k, Σ_k)`
+- Variational mixture families for the posterior
+- Diffusion-based decoders for greater flexibility
+
+#### 3. Bayesian LSTM for Sequential Voting Decisions
+
+**Advantages**:
+- Natural fit for ranked-choice and sequential voting systems
+- Captures temporal dependencies in panel surveys
+- Posterior uncertainty quantification over parameters
+
+**Architecture**:
+```python
+class BayesianLSTM(nn.Module):
+    def __init__(self, input_dim, hidden_dim, latent_dim):
+        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers=2)
+        self.latent_projection = nn.Linear(hidden_dim, latent_dim * 2)  # μ and σ
+
+    def forward(self, voter_sequence):
+        # Process temporal voter data
+        h_t, _ = self.lstm(voter_sequence)
+
+        # Predict latent political position over time
+        μ, log_σ = self.latent_projection(h_t).chunk(2, dim=-1)
+
+        return μ, log_σ
+```
+
+**Inference**: Use variational inference or Adaptive Gauss-Hermite Quadrature (AGHQ) to approximate posterior over LSTM weights and hidden states.
+
+#### 4. Gaussian Mixture Models (GMM) for Voter Clusters
+
+**Advantages**:
+- Explicitly models voter clustering (party identification, ideological camps)
+- Interpretable components
+- Can be combined with neural networks
+
+**Architecture**:
+```python
+class ConditionalGMM(nn.Module):
+    def __init__(self, n_components, latent_dim, condition_dim):
+        self.mixture_network = nn.Sequential(...)  # demographics → π_k
+        self.mean_network = nn.Sequential(...)      # demographics → μ_k
+        self.cov_network = nn.Sequential(...)       # demographics → Σ_k
+
+    def forward(self, demographics):
+        π = softmax(self.mixture_network(demographics))
+        μ = self.mean_network(demographics)
+        Σ = positive_definite(self.cov_network(demographics))
+
+        return MixtureOfGaussians(π, μ, Σ)
+```
+
+### Regularization and Training Strategies
+
+1. **Regularization Terms**:
+   - Encourage smooth embeddings: `R_smooth = ||∇_demographics z||²`
+   - Party alignment: Constrain known party affiliations to cluster
+   - Temporal consistency: For panel data, penalize rapid shifts in individual embeddings
+
+2. **Multi-Task Learning**:
+   - Joint training on surveys + elections + text data
+   - Shared encoder, task-specific decoders
+   - Weighted loss: `L = λ_survey L_survey + λ_election L_election + λ_text L_text`
+
+3. **Data Augmentation**:
+   - Bootstrap resampling of surveys
+   - Synthetic voter generation from learned distributions
+   - Counterfactual elections (what-if candidate scenarios)
+
+### Training Pipeline
+
+```
+1. Data Preprocessing
+   ├── Survey data → voter demographics + preferences
+   ├── Election results → vote shares by district/state
+   └── Text data → candidate platform embeddings (BERT/GPT)
+
+2. Model Training
+   ├── Initialize: Random embeddings or pre-trained text embeddings
+   ├── Forward pass: demographics → latent z → voting simulation → predicted results
+   ├── Compute loss: Compare predicted vs. actual survey/election outcomes
+   ├── Backward pass: Update θ via gradient descent
+   └── Regularize: Apply smoothness/clustering penalties
+
+3. Posterior Sampling
+   ├── For each voter: Sample z_i ~ p_θ(z | demographics_i)
+   ├── Estimate uncertainty via Monte Carlo
+   └── Visualize distributions (marginals, joint densities)
+
+4. Validation
+   ├── Hold-out test set of elections
+   ├── Check calibration: Do predicted vote shares match actuals?
+   └── Ablation studies: Remove features/data sources, measure impact
+```
+
+### Handling Multi-Modal Distributions
+
+Political polarization creates multi-modal voter distributions. Standard approaches fail:
+- **Problem**: Gaussian VAEs produce unimodal posteriors
+- **Solutions**:
+  1. **Normalizing Flows**: Inherently multi-modal via invertible transforms
+  2. **Mixture VAEs**: Use mixture-of-Gaussians prior and posterior
+  3. **Diffusion Models**: Recent work (MDDVAE) combines diffusion + VAE for multimodal generation
+  4. **Product of Experts**: Combine multiple encoder distributions
+
+### Evaluation Metrics
+
+1. **Predictive Accuracy**:
+   - Election outcome prediction (winner, vote share)
+   - Survey response prediction (party ID, candidate preference)
+
+2. **Calibration**:
+   - Do 90% credible intervals contain true values 90% of the time?
+   - Reliability diagrams for probabilistic predictions
+
+3. **Interpretability**:
+   - Do learned embeddings align with known political axes (left-right, authoritarian-libertarian)?
+   - Can we identify voter segments that match known demographics?
+
+4. **Generalization**:
+   - Cross-validation across states, years, election types
+   - Transfer learning: Train on one region, test on another
+
+### Current Implementation Status
+
+- ✅ Voter preference generation (`vote_random.py`)
+- ✅ Voting simulation for multiple systems (`simulate_and_visualize.py`)
+- 🚧 Neural architecture for inference (`voting_ml_game.py` - in progress)
+- 🚧 Training pipeline on historical data
+- 📋 Planned: Normalizing flow implementation
+- 📋 Planned: Transformer VAE for text incorporation
 
 ### Instructions for Using the Datasets:
 1. **Download the necessary submodules**:
