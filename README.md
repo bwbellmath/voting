@@ -2,22 +2,67 @@
 
 This project performs analysis on voting data using Python and various scientific libraries, with a focus on learning hidden political compass embeddings from survey and election data. The analysis can be enhanced by integrating election results data from the [fivethirtyeight/election-results](https://github.com/fivethirtyeight/election-results) repository.
 
+## Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone git@github.com:bwbellmath/voting.git
+cd voting
+```
+
+### 2. Download Large Data Files
+
+Large CSV files (407 MB total) are hosted on GitHub Releases to avoid exceeding repository size limits.
+
+**Quick download:**
+```bash
+./download_data.sh
+```
+
+**Manual download (if you don't have `gh` CLI):**
+```bash
+# Install GitHub CLI first
+brew install gh
+gh auth login
+
+# Then download the files
+gh release download v1.0-data -D csv/old/ -R bwbellmath/voting
+```
+
+**Or download directly from the web:**
+Visit https://github.com/bwbellmath/voting/releases/tag/v1.0-data and download the files to `csv/old/`
+
+**Files included:**
+- `1976-2020-house-stoch_test.csv` (282 MB) - House election stochastic test data
+- `1976-2020-senate_cur.csv` (93 MB) - Current Senate election data
+- `1976-2020-senate-stoch_test.csv` (32 MB) - Senate election stochastic test data
+
+### 3. Set Up Conda Environment
+
+```bash
+conda env create -f voting.yml
+conda activate voting
+```
+
+This installs all required dependencies including PyTorch, PyTorch Lightning, Normalizing Flows libraries, Pyro, Flask, and data processing tools.
+
+### 4. Initialize Submodules (Optional)
+
+To include the fivethirtyeight election results data:
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Quick Start
 
-1. **Clone and setup**:
-   ```bash
-   git clone git@github.com:bwbellmath/voting.git
-   cd voting
-   conda env create -f voting.yml
-   conda activate voting
-   ```
-
-2. **Test the data loaders**:
+1. **Test the data loaders**:
    ```bash
    python data_loaders.py
    ```
 
-3. **Launch the D3 visualization interface**:
+2. **Launch the D3 visualization interface**:
 
    **On the server (local or remote):**
    ```bash
@@ -52,94 +97,12 @@ This project performs analysis on voting data using Python and various scientifi
    - The tunnel securely encapsulates HTTP traffic within the SSH connection
    - Perfect for accessing services behind firewalls or NAT
 
-4. **Run preprocessing tests**:
+3. **Run preprocessing tests**:
    ```bash
    python preprocessing.py
    ```
 
-### Setting up the Election Results Submodule
-
-To include the election results data as a submodule in this project:
-
-1. **Clone this repository** (if you haven't already):
-
-    ```bash
-    git clone git@github.com:bwbellmath/voting.git
-    cd voting
-    ```
-
-2. **Add the election-results repository as a submodule**:
-
-    ```bash
-    git submodule add git@github.com:fivethirtyeight/election-results.git path/to/submodule
-    ```
-
-    Replace `path/to/submodule` with the desired directory name.
-
-3. **Initialize and update the submodule**:
-
-    ```bash
-    git submodule update --init --recursive
-    ```
-
-4. **Pull updates to the submodule** as needed:
-
-    ```bash
-    git submodule update --remote
-    ```
-
-5. **Commit the changes**:
-
-    After setting up the submodule, commit the changes:
-
-    ```bash
-    git add .gitmodules path/to/submodule
-    git commit -m "Added election-results as a submodule"
-    ```
-
-### Setting Up the Conda Environment
-
-To set up the environment for running the project, follow these steps:
-
-1. **Create the environment** from the provided `voting.yml` file:
-
-    ```bash
-    conda env create -f voting.yml
-    ```
-
-    This will install all required dependencies including:
-    - PyTorch and PyTorch Lightning for neural network training
-    - Normalizing Flows libraries (nflows, normflows)
-    - Pyro for Bayesian inference
-    - Flask for serving D3 visualizations
-    - Hydra for experiment configuration
-    - All data processing libraries (pandas, numpy, scikit-learn)
-
-2. **Activate the environment**:
-
-    ```bash
-    conda activate voting
-    ```
-
-3. **Verify installation** by testing the data loaders:
-
-    ```bash
-    python data_loaders.py
-    ```
-
-4. **Launch JupyterLab** (optional, for interactive development):
-
-    ```bash
-    jupyter lab
-    ```
-
-5. **Start the visualization server** (to explore data with D3):
-
-    ```bash
-    python viz_server.py
-    ```
-
-    Then open your browser to `http://localhost:5000` to interact with the D3 visualizations.
+## Managing Your Environment
 
 ### Updating the Environment
 
@@ -156,18 +119,15 @@ conda env remove -n voting
 conda env create -f voting.yml
 ```
 
-### Dependencies
+### Updating Submodules
 
-The environment includes:
-- **Python 3.10**: The core language used for analysis.
-- **NumPy**: For numerical operations.
-- **Pandas**: For handling data frames and CSVs.
-- **Matplotlib** & **Seaborn**: For visualization.
-- **JupyterLab**: For interactive data analysis and notebooks.
-- **Scikit-learn**: For any machine learning tasks.
-- **PyTorch**: Included for deep learning or tensor computations.
-- **fivethirtyeight**: For the election data.
+To pull the latest election results data:
 
+```bash
+git submodule update --remote
+```
+
+## Data Documentation
 
 ### Survey Data and Election Results in This Repository
 
@@ -459,7 +419,6 @@ Political polarization creates multi-modal voter distributions. Standard approac
 - 📋 Planned: Normalizing flow implementation
 - 📋 Planned: Transformer VAE for text incorporation
 
-### Instructions for Using the Datasets:
-1. **Download the necessary submodules**:
-   ```bash
-   git submodule update --init --recursive
+---
+
+For setup instructions, see the [Setup](#setup) section at the top of this README.
