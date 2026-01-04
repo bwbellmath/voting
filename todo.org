@@ -65,4 +65,7 @@ embedding to indicate the two strongest party's level of support. Then
 
 ** Later Goal : Convert model to use latent embeddings from a transformer or something similar so that the problem can be converted for the DefCon Game. 
 
-
+In general, one can impose one's will on others with one's resources
+or use them on oneself. the latter can be thought of as universally
+wrong. Accepting that axiom, government is fine up to the point where
+it becomes a tool to impose one will on another. 
