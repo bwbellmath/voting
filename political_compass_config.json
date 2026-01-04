@@ -1,0 +1,88 @@
+{
+  "political_compass": {
+    "dimensions": [
+      {
+        "name": "economic_left_right",
+        "description": "Economic ideology spectrum from left (government intervention) to right (free market)",
+        "range": [-1.0, 1.0],
+        "labels": {
+          "-1.0": "Far Left",
+          "-0.5": "Left",
+          "0.0": "Center",
+          "0.5": "Right",
+          "1.0": "Far Right"
+        }
+      },
+      {
+        "name": "social_libertarian_authoritarian",
+        "description": "Social control spectrum from libertarian (individual freedom) to authoritarian (state control)",
+        "range": [-1.0, 1.0],
+        "labels": {
+          "-1.0": "Libertarian",
+          "-0.5": "Liberal",
+          "0.0": "Moderate",
+          "0.5": "Conservative",
+          "1.0": "Authoritarian"
+        }
+      },
+      {
+        "name": "interventionist_isolationist",
+        "description": "Foreign policy spectrum from interventionist to isolationist",
+        "range": [-1.0, 1.0],
+        "labels": {
+          "-1.0": "Globalist/Interventionist",
+          "0.0": "Pragmatic",
+          "1.0": "Isolationist"
+        }
+      },
+      {
+        "name": "progressive_traditional",
+        "description": "Cultural values spectrum from progressive to traditional",
+        "range": [-1.0, 1.0],
+        "labels": {
+          "-1.0": "Very Progressive",
+          "0.0": "Moderate",
+          "1.0": "Very Traditional"
+        }
+      }
+    ],
+    "model_config": {
+      "n_dimensions": 4,
+      "transformer": {
+        "d_model": 128,
+        "n_heads": 4,
+        "n_layers": 6,
+        "d_ff": 512,
+        "dropout": 0.1
+      },
+      "training": {
+        "batch_size": 256,
+        "learning_rate": 0.0001,
+        "n_epochs": 100,
+        "noise_augmentation_std": 0.01,
+        "gradient_clip": 1.0
+      },
+      "target_distribution": {
+        "type": "multimodal_gaussian",
+        "n_modes": 5,
+        "mode_descriptions": [
+          "Progressive Left (Bernie Sanders, AOC)",
+          "Moderate Left (Biden, Obama)",
+          "Centrist (Romney, Manchin)",
+          "Conservative Right (Trump, DeSantis)",
+          "Libertarian (Rand Paul)"
+        ],
+        "mode_centers": [
+          [-0.7, -0.6, -0.3, -0.8],
+          [-0.4, -0.2, -0.1, -0.3],
+          [0.0, 0.0, 0.0, 0.0],
+          [0.6, 0.5, 0.4, 0.7],
+          [0.5, -0.7, 0.6, 0.2]
+        ],
+        "mode_covariances": "scaled_identity",
+        "mode_scale": 0.15,
+        "mode_weights": [0.25, 0.30, 0.15, 0.25, 0.05]
+      }
+    }
+  }
+}
