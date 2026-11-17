@@ -489,3 +489,5 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/emacs,python
 >>>>>>> 844af01534e262d95e724b597fa7117f3a13ddee
+webui/.geo_cache/
+webui/data/

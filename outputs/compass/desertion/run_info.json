@@ -1,0 +1,40 @@
+{
+ "pooled_gap": 1.659580257667469,
+ "between_year_sd": 0.39208972379579904,
+ "kappa": -0.03969889794051043,
+ "kappa_se": 0.06311244656512496,
+ "kappa_used": 0.0,
+ "pooled_suppression_dead_heat": 0.8097811937674354,
+ "seriousness_gap_one_major": 1.4970494011567794,
+ "seriousness_gap_by_group": {
+  "L": 1.1337071245158077,
+  "G": 1.4129749145685582,
+  "X": 1.72603651475052
+ },
+ "minor_candidates": 7313,
+ "one_major_candidates": 766,
+ "calibration_max_abs_err": 0.0005560219287872314,
+ "contests": 10774,
+ "contests_adjusted": 4626,
+ "contests_capped": 518,
+ "minor_first_choice_pct_observed": 2.2758863444493835,
+ "minor_first_choice_pct_sincere": 8.03400085347248,
+ "third_party_winners": {
+  "plurality": 109.6449966430664,
+  "random_ballot": 866.6699829101562,
+  "ranked_choice": 123.50499725341797,
+  "approval": 127.00499725341797,
+  "star": 130.18499755859375,
+  "borda": 133.68499755859375,
+  "condorcet": 129.6999969482422
+ },
+ "actual_third_party_winners": 19,
+ "seconds": 344.71516013145447,
+ "args": {
+  "model": "outputs/compass/full_d2K4",
+  "out": "outputs/compass/desertion",
+  "iters": 200,
+  "voters": 1000,
+  "seed": 0
+ }
+}
